@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My E-Commerce Portal</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f2f2f2; }
+    header { background: #007bff; color: white; padding: 10px 20px; }
+    header h1 { display: inline; }
+    nav { margin-top: 10px; }
+    nav button {
+      background: white; color: #007bff; border: none;
+      margin: 5px; padding: 8px 12px; cursor: pointer; border-radius: 4px;
+    }
+    nav button:hover { background: #e6e6e6; }
+    .container { padding: 20px; background: white; margin: 15px; border-radius: 8px; }
+    input, textarea { width: 90%; padding: 8px; margin: 5px 0; border-radius: 4px; border: 1px solid #ccc; }
+    button.action { background: #007bff; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+    button.action:hover { background: #0056b3; }
+    .product { border: 1px solid #ccc; padding: 10px; margin: 10px; border-radius: 6px; display: inline-block; width: 200px; background: #fafafa; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>MyShop</h1>
+  <nav>
+    <button onclick="showPage('home')">Home</button>
+    <button onclick="showPage('products')">Products</button>
+    <button onclick="showPage('register')">Register</button>
+    <button onclick="showPage('login')">Login</button>
+    <button onclick="showPage('orders')">Orders</button>
+    <button onclick="showPage('wishlist')">Wishlist</button>
+    <button onclick="showPage('reviews')">Reviews</button>
+    <button onclick="showPage('care')">Customer Care</button>
+    <button onclick="showPage('about')">About Us</button>
+  </nav>
+</header>
+
+<div id="home" class="container">
+  <h2>Welcome to MyShop!</h2>
+  <p>Your one-stop shop for everything you love.</p>
+</div>
+
+<div id="products" class="container hidden">
+  <h2>Product Items</h2>
+  <div id="productList"></div>
+</div>
+
+<div id="register" class="container hidden">
+  <h2>User Registration</h2>
+  <input id="regName" placeholder="Full Name"><br>
+  <input id="regEmail" placeholder="Email"><br>
+  <input id="regPass" type="password" placeholder="Password"><br>
+  <input id="regPhone" placeholder="Phone Number"><br>
+  <button class="action" onclick="register()">Register</button>
+  <p id="regMsg"></p>
+</div>
+
+<div id="login" class="container hidden">
+  <h2>User Login</h2>
+  <input id="loginEmail" placeholder="Email"><br>
+  <input id="loginPass" type="password" placeholder="Password"><br>
+  <button class="action" onclick="login()">Login</button>
+  <p id="loginMsg"></p>
+</div>
+
+<div id="orders" class="container hidden">
+  <h2>Your Orders</h2>
+  <div id="orderList"></div>
+</div>
+
+<div id="wishlist" class="container hidden">
+  <h2>Your Wishlist</h2>
+  <div id="wishList"></div>
+</div>
+
+<div id="reviews" class="container hidden">
+  <h2>Comments & Reviews</h2>
+  <textarea id="reviewText" placeholder="Write your review..."></textarea><br>
+  <button class="action" onclick="addReview()">Submit Review</button>
+  <div id="reviewList"></div>
+</div>
+
+<div id="care" class="container hidden">
+  <h2>Customer Care</h2>
+  <input id="ticketSubject" placeholder="Subject"><br>
+  <textarea id="ticketMsg" placeholder="Describe your issue..."></textarea><br>
+  <button class="action" onclick="submitTicket()">Submit Ticket</button>
+  <p id="ticketStatus"></p>
+</div>
+
+<div id="about" class="container hidden">
+  <h2>About Us</h2>
+  <p>MyShop is an online platform offering a wide range of products with fast delivery and customer-first service.</p>
+</div>
+
+<script>
+let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+const products = [
+  { id: 1, name: "Smartphone", price: 15000 },
+  { id: 2, name: "Headphones", price: 1200 },
+  { id: 3, name: "Laptop", price: 55000 },
+  { id: 4, name: "Smartwatch", price: 2500 }
+];
+
+function showPage(id) {
+  document.querySelectorAll('.container').forEach(div => div.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  if (id === 'products') renderProducts();
+  if (id === 'orders') renderOrders();
+  if (id === 'wishlist') renderWishlist();
+  if (id === 'reviews') renderReviews();
+}
+
+function register() {
+  const name = regName.value.trim();
+  const email = regEmail.value.trim();
+  const pass = regPass.value.trim();
+  const phone = regPhone.value.trim();
+  if (!name || !email || !pass || !phone) return regMsg.innerText = "All fields required!";
+  if (!email.includes('@')) return regMsg.innerText = "Invalid email!";
+  if (pass.length < 4) return regMsg.innerText = "Password too short!";
+  const users = JSON.parse(localStorage.getItem('users')) || [];
+  if (users.some(u => u.email === email)) return regMsg.innerText = "User already exists!";
+  users.push({ name, email, pass, phone, orders: [], wishlist: [] });
+  localStorage.setItem('users', JSON.stringify(users));
+  regMsg.innerText = "Registration successful!";
+}
+
+function login() {
+  const email = loginEmail.value.trim();
+  const pass = loginPass.value.trim();
+  const users = JSON.parse(localStorage.getItem('users')) || [];
+  const user = users.find(u => u.email === email && u.pass === pass);
+  if (!user) return loginMsg.innerText = "Invalid login!";
+  currentUser = user;
+  localStorage.setItem('currentUser', JSON.stringify(user));
+  loginMsg.innerText = "Login successful!";
+}
+
+function renderProducts() {
+  const list = document.getElementById('productList');
+  list.innerHTML = "";
+  products.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'product';
+    div.innerHTML = `<h4>${p.name}</h4><p>₹${p.price}</p>
+    <button class='action' onclick='addOrder(${p.id})'>Buy</button>
+    <button class='action' onclick='addToWishlist(${p.id})'>Wishlist</button>`;
+    list.appendChild(div);
+  });
+}
+
+function addOrder(id) {
+  if (!currentUser) return alert("Please login!");
+  const users = JSON.parse(localStorage.getItem('users')) || [];
+  const user = users.find(u => u.email === currentUser.email);
+  const product = products.find(p => p.id === id);
+  user.orders.push(product);
+  localStorage.setItem('users', JSON.stringify(users));
+  localStorage.setItem('currentUser', JSON.stringify(user));
+  alert("Order placed!");
+}
+
+function renderOrders() {
+  if (!currentUser) return orderList.innerHTML = "<p>Please login!</p>";
+  orderList.innerHTML = currentUser.orders.length
+    ? currentUser.orders.map(o => `<p>${o.name} - ₹${o.price}</p>`).join("")
+    : "<p>No orders yet.</p>";
+}
+
+function addToWishlist(id) {
+  if (!currentUser) return alert("Please login!");
+  const users = JSON.parse(localStorage.getItem('users')) || [];
+  const user = users.find(u => u.email === currentUser.email);
+  const product = products.find(p => p.id === id);
+  if (!user.wishlist.some(w => w.id === id)) user.wishlist.push(product);
+  localStorage.setItem('users', JSON.stringify(users));
+  localStorage.setItem('currentUser', JSON.stringify(user));
+  alert("Added to wishlist!");
+}
+
+function renderWishlist() {
+  if (!currentUser) return wishList.innerHTML = "<p>Please login!</p>";
+  wishList.innerHTML = currentUser.wishlist.length
+    ? currentUser.wishlist.map(w => `<p>${w.name} - ₹${w.price}</p>`).join("")
+    : "<p>No items in wishlist.</p>";
+}
+
+function addReview() {
+  const text = reviewText.value.trim();
+  if (!text) return alert("Enter a review!");
+  const reviews = JSON.parse(localStorage.getItem('reviews')) || [];
+  reviews.push({ user: currentUser ? currentUser.name : "Guest", text });
+  localStorage.setItem('reviews', JSON.stringify(reviews));
+  reviewText.value = "";
+  renderReviews();
+}
+
+function renderReviews() {
+  const reviews = JSON.parse(localStorage.getItem('reviews')) || [];
+  reviewList.innerHTML = reviews.map(r => `<p><b>${r.user}:</b> ${r.text}</p>`).join("");
+}
+
+function submitTicket() {
+  const sub = ticketSubject.value.trim();
+  const msg = ticketMsg.value.trim();
+  if (!sub || !msg) return ticketStatus.innerText = "All fields required!";
+  const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
+  tickets.push({ sub, msg, user: currentUser ? currentUser.email : "Guest" });
+  localStorage.setItem('tickets', JSON.stringify(tickets));
+  ticketStatus.innerText = "Ticket submitted successfully!";
+  ticketSubject.value = ticketMsg.value = "";
+}
+</script>
+</body>
+</html>
